@@ -7,7 +7,7 @@ st.title("🤖 AI Customer Support Assistant")
 st.write("નમસ્તે! હું તમારી શું મદદ કરી શકું?")
 
 # Gemini API Key સેટ કરો (તમારી સાચી કી અહીં મૂકજો)
-GEMINI_API_KEY = "AQ.Ab8RN6J9HfNYYKActUygVnRBt7Q-a0327CNYTu0ed1Nq1FnzbQ"
+GEMINI_API_KEY = "AQ.Ab8RN6KHCVz0OTdMva6Rx4WVYHFlQ7Xqjc0OsuOAzPSltzTQTQ"
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
