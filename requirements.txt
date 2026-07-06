@@ -1,3 +1,2 @@
-Flask
+streamlit
 google-generativeai
-gunicorn
