@@ -6,13 +6,14 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 
-// ફ્રન્ટએન્ડ ફોલ્ડર કનેક્ટ કરવા માટે
+// ફ્રન્ટએન્ડ ફોલ્ડર
 app.use(express.static(path.join(__dirname, 'public')));
 
 const apiKey = process.env.GEMINI_API_KEY || "";
 let ai = null;
 
 if (apiKey) {
+    // સાચી પદ્ધતિ: GoogleGenAI નો નવો ઓબ્જેક્ટ બનાવવો
     ai = new GoogleGenAI({ apiKey: apiKey });
 }
 
