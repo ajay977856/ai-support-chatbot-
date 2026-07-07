@@ -1,44 +1,40 @@
 const express = require('express');
-// નવીનતમ ગૂગલ જેમિની મોડ્યુલ લોડ કરવાની સાચી પદ્ધતિ
-const { GoogleGenAI } = require('@google/generative-ai');
+const { GoogleGenAI } = require('@google/genai');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
 app.use(express.json());
-app.use(express.static('public'));
 
-// ચેક કરો કે કી લોડ થાય છે કે નહીં, નહિતર ડિફોલ્ટ ખાલી સ્ટ્રિંગ આપો જેથી ક્રેશ ન થાય
+// આ લાઇનથી ફ્રન્ટએન્ડ ફોલ્ડર બરાબર લોડ થશે
+app.use(express.static(path.join(__dirname, 'public')));
+
 const apiKey = process.env.GEMINI_API_KEY || "";
+const ai = apiKey ? new GoogleGenAI({ apiKey: apiKey }) : null;
 
-let ai = null;
-try {
-    if (apiKey) {
-        ai = new GoogleGenAI({ apiKey: apiKey });
-    }
-} catch (e) {
-    console.error("Gemini initialization error:", e);
-}
-
-// Chat API Endpoint
 app.post('/api/chat', async (req, res) => {
     try {
         const { message } = req.body;
-        if (!message) return res.status(400).json({ error: "Message is required!" });
-        if (!ai) return res.status(500).json({ error: "AI configuration is missing. Check GEMINI_API_KEY." });
+        if (!message) return res.status(400).json({ error: "Message required" });
+        if (!ai) return res.status(500).json({ error: "API Key Missing" });
 
-        const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
-        
-        const systemPrompt = "You are a helpful customer support AI assistant. Keep responses brief, clear, and polite.";
-        const result = await model.generateContent(`${systemPrompt}\nUser: ${message}`);
-        const response = await result.response;
-        
-        res.json({ reply: response.text() });
+        // નવી લાઈબ્રેરી મુજબ સાચો મોડેલ કૉલ
+        const response = await ai.models.generateContent({
+            model: 'gemini-1.5-flash',
+            contents: `You are a helpful customer support AI assistant. Keep responses brief and polite.\nUser: ${message}`,
+        });
+
+        res.json({ reply: response.text });
     } catch (error) {
-        console.error("Error details:", error);
-        res.status(500).json({ error: "Something went wrong on the server!" });
+        console.error(error);
+        res.status(500).json({ error: "Server Error" });
     }
 });
 
-// Render માટે પોર્ટ સેટિંગ
-const PORT = process.env.PORT || 10000; 
+// જો હોમ પેજ ડાયરેક્ટ લોડ ન થાય તો આ રૂટ મદદ કરશે
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
