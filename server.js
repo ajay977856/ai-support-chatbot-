@@ -1,37 +1,40 @@
 const express = require('express');
-const { GoogleGenAI } = require('@google/genai');
+const { GoogleGenAI } = require('@google/generative-ai');
 const path = require('path');
 require('dotenv').config();
 
 const app = express();
 app.use(express.json());
 
-// આ લાઇનથી ફ્રન્ટએન્ડ ફોલ્ડર બરાબર લોડ થશે
+// ફ્રન્ટએન્ડ ફોલ્ડર કનેક્ટ કરવા માટે
 app.use(express.static(path.join(__dirname, 'public')));
 
 const apiKey = process.env.GEMINI_API_KEY || "";
-const ai = apiKey ? new GoogleGenAI({ apiKey: apiKey }) : null;
+let ai = null;
+
+if (apiKey) {
+    ai = new GoogleGenAI({ apiKey: apiKey });
+}
 
 app.post('/api/chat', async (req, res) => {
     try {
         const { message } = req.body;
         if (!message) return res.status(400).json({ error: "Message required" });
-        if (!ai) return res.status(500).json({ error: "API Key Missing" });
+        if (!ai) return res.status(500).json({ error: "API Key missing" });
 
-        // નવી લાઈબ્રેરી મુજબ સાચો મોડેલ કૉલ
-        const response = await ai.models.generateContent({
-            model: 'gemini-1.5-flash',
-            contents: `You are a helpful customer support AI assistant. Keep responses brief and polite.\nUser: ${message}`,
-        });
-
-        res.json({ reply: response.text });
+        const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const systemPrompt = "You are a helpful customer support AI assistant. Keep responses brief and polite.";
+        
+        const result = await model.generateContent(`${systemPrompt}\nUser: ${message}`);
+        const response = await result.response;
+        
+        res.json({ reply: response.text() });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Server Error" });
     }
 });
 
-// જો હોમ પેજ ડાયરેક્ટ લોડ ન થાય તો આ રૂટ મદદ કરશે
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
